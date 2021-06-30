@@ -50,6 +50,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   CircleMarker cm;
   Polygon pl;
+
+  double radius = 200;
   // List<LatLng> points;
 
   @override
@@ -66,64 +68,96 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: FlutterMap(
-        options: MapOptions(
-          onMapCreated: (mapController) {
-            pl = Polygon(points: []);
-          },
-          onLongPress: (point) {
-            print(pl.points.length);
+      body: Column(
+        children: [
+          if (cm != null)
+            Slider(
+                min: 100,
+                max: 1000,
+                divisions: 100,
+                label: radius.round().toString(),
+                value: radius,
+                onChanged: (point) {
+                  setState(() {
+                    radius = point;
+                    final cm1 = CircleMarker(
+                      radius: radius,
+                      useRadiusInMeter: true,
+                      point: cm.point,
+                      color: Color.fromARGB(100, 200, 100, 5),
+                      borderColor: Colors.black,
+                      borderStrokeWidth: 1,
+                    );
 
-            if (pl.points.length > 3) {
-              pl.points.clear();
-              return;
-            }
+                    cm = cm1;
+                  });
+                }),
+          Expanded(
+            child: FlutterMap(
+              options: MapOptions(
+                onMapCreated: (mapController) {
+                  pl = Polygon(points: []);
+                },
+                onLongPress: (point) {
+                  print(pl.points.length);
 
-            setState(() {
-              pl.points.add(point);
-            });
-          },
-          onTap: (point) {
-            setState(() {
-              cm = CircleMarker(
-                radius: 400,
-                useRadiusInMeter: true,
-                point: point,
-                color: Color.fromARGB(100, 200, 100, 5),
-                borderColor: Colors.black,
-                borderStrokeWidth: 1,
-              );
-            });
-          },
-          center: LatLng(51.5, -0.09),
-          zoom: 13.0,
-        ),
-        layers: [
-          TileLayerOptions(
-              urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              subdomains: ['a', 'b', 'c']),
-          MarkerLayerOptions(
-            markers: [
-              Marker(
-                width: 80.0,
-                height: 80.0,
-                point: LatLng(51.5, -0.09),
-                builder: (ctx) => Container(
-                  child: FlutterLogo(),
-                ),
+                  if (pl.points.length > 3) {
+                    pl.points.clear();
+                    return;
+                  }
+
+                  setState(() {
+                    pl.points.add(point);
+                  });
+                },
+                onTap: (point) {
+                  setState(() {
+                    cm = CircleMarker(
+                      radius: 400,
+                      useRadiusInMeter: true,
+                      point: point,
+                      color: Color.fromARGB(100, 200, 100, 5),
+                      borderColor: Colors.black,
+                      borderStrokeWidth: 1,
+                    );
+                  });
+                },
+                center: LatLng(51.5, -0.09),
+                zoom: 13.0,
               ),
-            ],
+              layers: [
+                TileLayerOptions(
+                    urlTemplate:
+                        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    subdomains: ['a', 'b', 'c']),
+                MarkerLayerOptions(
+                  markers: [
+                    Marker(
+                      width: 80.0,
+                      height: 80.0,
+                      point: LatLng(51.5, -0.09),
+                      builder: (ctx) => Container(
+                        child: FlutterLogo(),
+                      ),
+                    ),
+                  ],
+                ),
+                CircleLayerOptions(
+                  circles: [if (cm != null) cm],
+                ),
+                PolygonLayerOptions(polygons: [
+                  if (pl != null && pl.points.length > 3) pl,
+                ])
+              ],
+            ),
           ),
-          CircleLayerOptions(
-            circles: [if (cm != null) cm],
-          ),
-          PolygonLayerOptions(polygons: [
-            if (pl != null && pl.points.length > 3) pl,
-          ])
         ],
       ),
       floatingActionButton: FloatingActionButton(onPressed: () {
-        setState(() {});
+        setState(() {
+          pl = null;
+          cm = null;
+        });
       }),
     );
   }
