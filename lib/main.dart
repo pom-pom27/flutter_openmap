@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:latlong2/latlong.dart';
 
 void main() {
@@ -7,21 +8,11 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
         primarySwatch: Colors.blue,
       ),
       home: MyHomePage(title: 'Flutter Demo Home Page'),
@@ -31,15 +22,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -51,21 +33,63 @@ class _MyHomePageState extends State<MyHomePage> {
   CircleMarker cm;
   Polygon pl;
 
+  PolylinePoints polylinePoints = PolylinePoints();
+  List<PointLatLng> result;
+
+  List<LatLng> coordinates = [
+    LatLng(
+      -6.222747,
+      106.946948,
+    ),
+    LatLng(
+      -6.222858,
+      106.946912,
+    ),
+    LatLng(
+      -6.222873,
+      106.946905,
+    ),
+    LatLng(
+      -6.222912,
+      106.947074,
+    ),
+    LatLng(
+      -6.222936,
+      106.9472,
+    ),
+    LatLng(
+      -6.222952,
+      106.94727,
+    ),
+    LatLng(
+      -6.223029,
+      106.947582,
+    ),
+    LatLng(
+      -6.223046,
+      106.947652,
+    )
+  ];
+
   double radius = 200;
-  // List<LatLng> points;
+
+  Polyline polyline;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    result =
+        polylinePoints.decodePolyline("txxzJgwo~jE|EfA\\LlAqIn@{F^kCxCoR`@kC");
+    for (var item in result) {
+      // coordinates.add(LatLng(item.latitude, item.longitude));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Column(
@@ -95,36 +119,12 @@ class _MyHomePageState extends State<MyHomePage> {
           Expanded(
             child: FlutterMap(
               options: MapOptions(
-                onMapCreated: (mapController) {
-                  pl = Polygon(points: []);
-                },
-                onLongPress: (point) {
-                  print(pl.points.length);
-
-                  if (pl.points.length > 3) {
-                    pl.points.clear();
-                    return;
-                  }
-
-                  setState(() {
-                    pl.points.add(point);
-                  });
-                },
-                onTap: (point) {
-                  setState(() {
-                    cm = CircleMarker(
-                      radius: 400,
-                      useRadiusInMeter: true,
-                      point: point,
-                      color: Color.fromARGB(100, 200, 100, 5),
-                      borderColor: Colors.black,
-                      borderStrokeWidth: 1,
-                    );
-                  });
-                },
-                center: LatLng(51.5, -0.09),
-                zoom: 13.0,
-              ),
+                  onMapCreated: onMapCreated,
+                  onLongPress: onLongPress,
+                  onTap: onTap,
+                  center: LatLng(-6.22276, 106.94699),
+                  zoom: 18,
+                  maxZoom: 18),
               layers: [
                 TileLayerOptions(
                     urlTemplate:
@@ -133,12 +133,18 @@ class _MyHomePageState extends State<MyHomePage> {
                 MarkerLayerOptions(
                   markers: [
                     Marker(
-                      width: 80.0,
-                      height: 80.0,
-                      point: LatLng(51.5, -0.09),
+                      width: 10.0,
+                      height: 10.0,
+                      point: coordinates.first,
                       builder: (ctx) => Container(
-                        child: FlutterLogo(),
+                        color: Colors.green,
                       ),
+                    ),
+                    Marker(
+                      width: 10.0,
+                      height: 10.0,
+                      point: coordinates.last,
+                      builder: (ctx) => Container(color: Colors.red),
                     ),
                   ],
                 ),
@@ -147,7 +153,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
                 PolygonLayerOptions(polygons: [
                   if (pl != null && pl.points.length > 3) pl,
-                ])
+                ]),
+                PolylineLayerOptions(polylines: [Polyline(points: coordinates)])
               ],
             ),
           ),
@@ -160,5 +167,63 @@ class _MyHomePageState extends State<MyHomePage> {
         });
       }),
     );
+  }
+
+  void onMapCreated(mapController) {
+    pl = Polygon(points: []);
+  }
+
+  void onTap(point) {
+    setState(() {
+      cm = CircleMarker(
+        radius: 400,
+        useRadiusInMeter: true,
+        point: point,
+        color: Color.fromARGB(100, 200, 100, 5),
+        borderColor: Colors.black,
+        borderStrokeWidth: 1,
+      );
+    });
+  }
+
+  void onLongPress(point) {
+    print(pl.points.length);
+
+    if (pl.points.length > 3) {
+      pl.points.clear();
+      return;
+    }
+
+    setState(() {
+      pl.points.add(point);
+    });
+  }
+
+  List<LatLng> decodePolyline(String encoded) {
+    List<LatLng> points = <LatLng>[];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+      LatLng p = new LatLng(lat / 1E5, lng / 1E5);
+      points.add(p);
+    }
+    return points;
   }
 }
